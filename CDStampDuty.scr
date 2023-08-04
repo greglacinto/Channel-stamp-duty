@@ -1,0 +1,115 @@
+#===================================================================================
+# IMPORTANT: Auto Generated Header. DO NOT CHANGE MANUALLY.
+# Product: Finacle Core
+# Category: User Defined
+# author: Gregory Odiase 
+# Script: CDStampDuty.scr
+# Type: NA|default
+# Use: script is called to debit customer for stamp duty. This runs for accounts on Pnd
+#=====================================================================================
+<--start
+trace On
+
+    IF (REPEXISTS("OPT") == 0) THEN
+    #{
+        CREATEREP("OPT")
+    #}
+    ENDIF
+
+    IF (CLASSEXISTS("OPT", "STMP") == 0) THEN
+    #{
+        CREATECLASS("OPT", "STMP",5)
+    #}
+    ENDIF
+
+    OPT.STMP.outputFile = "records.out"
+
+    sv_a = "id,foracid,tranId,tranPart,crSol|SELECT ID,FORACID, TRAN_ID, TRAN_PARTICULAR, CR_SOL FROM CUSTOM.STMPCHRG "
+    sv_a = sv_a + "WHERE PSTD_FLG = 'N' "
+    PRINT(sv_a)
+    sv_s = urhk_dbCursorOpenWithBind(sv_a)
+    PRINT(sv_s)
+    IF(sv_s == 0) THEN
+    #{
+        sv_t = BANCS.OUTPARAM.DB_CURSOR_NUMBER
+        sv_u = urhk_dbCursorFetch(sv_t)
+
+        WHILE (sv_u == 0)
+        #{
+            PRINT(sv_u)
+            PRINT("BANCS.OUTPARAM.foracid")
+            
+            OPT.STMP.id             = BANCS.OUTPARAM.id 
+            OPT.STMP.drForacid      = BANCS.OUTPARAM.foracid 
+            OPT.STMP.charge         = "50"
+            OPT.STMP.sol            = BANCS.OUTPARAM.crSol 
+            OPT.STMP.tranParticular = MID$(BANCS.OUTPARAM.tranPart,0,50)
+            OPT.STMP.tranId         = BANCS.OUTPARAM.tranId
+            OPT.STMP.CrForacid      = OPT.STMP.sol + "NGN35201018"
+            OPT.STMP.narration      = "STAMP DUTY FOR "+OPT.STMP.tranId
+            OPT.STMP.newTranId      = ""
+
+            PRINT(OPT.STMP.tranParticular)
+
+            #--- Lift frez_code on GAM ---#
+            sv_b = "UPDATE TBAADM.GAM SET FREZ_CODE = '' WHERE FORACID = '"+OPT.STMP.drForacid+"' and BANK_ID = '01'"
+            PRINT(sv_b)
+            sv_r = urhk_dbSQLWithBind(sv_b)
+            PRINT(sv_r)
+
+            IF (sv_r == "0" ) THEN
+            #{               
+                CALL("CDStampDebitCredit.scr")
+
+                IF (STRLEN(OPT.STMP.newTranId) != "0") THEN
+                #{
+                    PRINT("SUCCESSFUL")
+                    
+                    #--------------To Update flags on CUSTOM.STMPCHRG--------------#
+                    sv_a = "UPDATE CUSTOM.STMPCHRG SET FREZ_CODE='',CHRG_TRAN_ID='"+OPT.STMP.newTranId+"' WHERE "
+                    sv_a = sv_a + "FORACID='"+OPT.STMP.drForacid+"' AND ID='"+OPT.STMP.id+"'"
+                    PRINT(sv_a)
+                    sv_r = urhk_dbSQLWithBind(sv_a)
+                    PRINT(sv_r)
+                ELSE
+                    PRINT("FAILED")
+                #}
+                ENDIF
+                
+            ELSE
+                sv_a = "Unable to update the record, Error during update"
+                print(sv_a)
+                sv_u = urhk_SRV_SetErr(sv_a)
+                BANCS.OUTPUT.successOrFailure = "F"
+                Exitscript
+            #}
+            ENDIF
+
+            #--- Place frez_code on GAM ---#
+            sv_b = "UPDATE TBAADM.GAM SET FREZ_CODE = 'D' WHERE FORACID = '"+OPT.STMP.drForacid+"' and BANK_ID = '01'"
+            PRINT(sv_b)
+            sv_r = urhk_dbSQLWithBind(sv_b)
+            PRINT(sv_r)
+
+            #--- update to stamp duty table ---#
+            sv_b = "UPDATE CUSTOM.STMPCHRG SET FREZ_CODE = 'D',LCHG_TIME='"+BANCS.INPUT.entryDate+"',PSTD_FLG="
+            sv_b = sv_b + "(SELECT PSTD_FLG FROM TBAADM.DTD WHERE TRAN_ID='"+OPT.STMP.newTranId+"' AND ROWNUM=1) "
+            sv_b = sv_b + "WHERE FORACID = '"+OPT.STMP.drForacid+"' and BANK_ID = '01' AND ID='"+OPT.STMP.id+"'"
+            PRINT(sv_b)
+            sv_r = urhk_dbSQLWithBind(sv_b)
+            PRINT(sv_r)
+
+
+            sv_u = urhk_dbCursorFetch(sv_t)
+        #}
+        DO
+        sv_v = urhk_dbCursorClose(sv_t)
+        PRINT("Cursor is closed")
+    #}
+    ENDIF
+
+    DELETECLASS("OPT", "STMP")
+    DELETEREP("OPT")
+
+trace off
+end-->

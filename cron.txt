@@ -1,0 +1,4 @@
+// this is the setting in crontab for stamp duty. 
+// it runs at the 30th minute of every hour
+
+*/30 * * * * /finbe/<bank-instance>/APP/Finacle/FC/app/cust/01/INFENG/com/stampDutyJob.com

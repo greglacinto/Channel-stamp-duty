@@ -1,0 +1,105 @@
+#===================================================================================
+# IMPORTANT: Auto Generated Header. DO NOT CHANGE MANUALLY.
+# Product: Finacle Core
+# Category: User Defined
+# author: Gregory Odiase 
+# Script: CDStampDebitCredit.scr
+# Type: NA|default
+# Use: script is called to debit customer for stamp duty. This runs for accounts on Pnd
+#=====================================================================================
+<--start
+trace on
+
+    sv_u = urhk_B2K_PrintRepos("BANCS")
+
+
+    ####TO TRANSFER THE TRANSACTION BETWEENE ACCOUNT NUMBERS######
+		#========================  TRANSFER ===========================
+		sv_a = urhk_SetUrhkInp("transferTranHdr.tranTypeSubType.tranType|T")
+		sv_a = urhk_SetUrhkInp("transferTranHdr.tranTypeSubType.tranSubType|BI")
+		sv_a = urhk_SetUrhkInp("tranDtl.pstFlg|Y")
+		sv_a = urhk_SetUrhkInp("tranDtl.ignoreXcpnFlg|I")
+
+		###DEBIT####
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_1>.key.serial_num|1")
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_1>.partTranType.code|D")
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_1>.acctId.foracid|"+ OPT.STMP.drForacid)
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_1>.acctId.crncyCode|"+"NGN")
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_1>.valueDate|" + BANCS.STDIN.BODDate)
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_1>.glDate|" + BANCS.STDIN.BODDate)
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_1>.tranAmt|" + OPT.STMP.charge +"|"+ "NGN")
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_1>.tranCrncyCode.crncyCode|"+ "NGN")
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_1>.refAmt|" + OPT.STMP.charge +"|"+ "NGN")
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_1>.tranParticulars|" + OPT.STMP.narration)
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_1>.refCrncyCode.crncyCode|" + "NGN")
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_1>.tranRmks|" + OPT.STMP.tranParticular)
+		sv_r = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_1>.refNum|"+ OPT.STMP.tranId)
+
+    sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_1>.entryUserId.userId|" + BANCS.STDIN.userId)
+		PRINT(sv_a)
+
+
+    #####CREDIT#######
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_0>.key.serial_num|2")
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_0>.partTranType.code|C")
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_0>.acctId.foracid|"+ OPT.STMP.CrForacid)
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_0>.acctId.crncyCode|"+"NGN")
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_0>.valueDate|" + BANCS.STDIN.BODDate)
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_0>.glDate|" + BANCS.STDIN.BODDate)
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_0>.tranAmt|" + OPT.STMP.charge +"|"+ "NGN")
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_0>.tranCrncyCode.crncyCode|"+"NGN")
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_0>.tranParticulars|" + OPT.STMP.narration)
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_0>.refCrncyCode.crncyCode|"+"NGN")
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_0>.refAmt|"+ OPT.STMP.charge +"|"+ "NGN")
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_0>.tranRmks|" + OPT.STMP.tranParticular)
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_0>.entryUserId.userId|"+BANCS.STDIN.userId)
+		sv_a = urhk_SetUrhkInp("tranDtl.partTranDetailLL.<rec_0>.refNum|" + OPT.STMP.tranId)
+		PRINT(sv_a)
+
+
+    #---------------------------------------
+    #Output from the service
+    #--------------------------------------
+    sv_a = urhk_SetUrhkOut("tranDtl.tranIdentifier.tranId|TranId")
+    PRINT(sv_a)
+    sv_a = urhk_SetUrhkOut("tranDtl.tranIdentifier.tranDate|tranDate")
+    PRINT(sv_a)
+    
+    #Call The SRV
+    sv_s = urhk_ExecSrv("SRV_AddTransferTran|retain_all_output = Y|same_user_verify = Y")
+    PRINT(sv_s)
+    IF (sv_s == 0) THEN
+    #{
+
+      OPT.STMP.newTranId = BANCS.OUTPARAM.TranId
+      PRINT(OPT.STMP.newTranId)
+      OPT.STMP.tranDateNew = BANCS.OUTPARAM.tranDate
+      OPT.STMP.tranDateNew = MID$(OPT.STMP.tranDateNew,0,10)
+      PRINT(OPT.STMP.tranDateNew)
+
+      sv_u = urhk_CopyOutToIn("")
+		  PRINT(sv_u)
+    #}
+    ENDIF
+
+    ##########################
+    ###Call SRV to fetch transaction
+    ##############################
+    sv_b = urhk_ExecSrv("SRV_FetchTransferTranForPost|retain_all_output = Y")
+    PRINT(sv_b)
+    
+    sv_u = urhk_CopyOutToIn("")
+    PRINT(sv_u)
+    
+    sv_a = urhk_SetUrhkOut("tranDtl.tranIdentifier.tranId|tranId")
+    sv_a = urhk_SetUrhkOut("tranDtl.tranIdentifier.tranDate|tranDate")
+
+    ##########################
+    ###Call SRV to post transaction
+    ##############################
+    sv_b = urhk_ExecSrv("SRV_PostTransferTran|retain_all_output = Y")
+    print(sv_b)
+
+    sv_u = urhk_B2K_PrintRepos("BANCS")
+
+end-->
