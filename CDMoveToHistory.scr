@@ -1,0 +1,66 @@
+#===================================================================================
+# IMPORTANT: Auto Generated Header. DO NOT CHANGE MANUALLY.
+# Product: Finacle Core
+# Category: User Defined
+# author: Gregory Odiase 
+# Script: CDMoveToHistory.scr
+# Type: NA|default
+# Use: script is called to debit customer for stamp duty. This runs for accounts on Pnd
+#=====================================================================================
+<--start
+trace On
+
+  
+    sv_a = "id,foracid,devType, tranType,srlNum,tranId,tranAmt,tranDate,tranPart,tranPart2,lchgUser,lchgTime,creatDate "
+    sv_a = sv_a + ",bankId,pstdFlg,frezCode,crSol,chrgTranId|SELECT * FROM CUSTOM.STMPCHRG WHERE PSTD_FLG='Y' ORDER BY ID ASC"
+    PRINT(sv_a)
+    sv_s = urhk_dbCursorOpenWithBind(sv_a)
+    PRINT(sv_s)
+    IF (sv_s == 0) THEN
+    #{
+        sv_t = BANCS.OUTPARAM.DB_CURSOR_NUMBER
+        sv_u = urhk_dbCursorFetch(sv_t)
+
+        WHILE (sv_u == 0) 
+        #{  
+          
+            sv_x = BANCS.OUTPARAM.id
+            sv_y = BANCS.OUTPARAM.foracid
+            sv_z = BANCS.OUTPARAM.chrgTranId
+
+            sv_a = "INSERT INTO CUSTOM.STAMP_DUTY_CHARGES_HISTORY (ID,FORACID,DEV_TYPE,TRAN_TYPE,SRL_NUM,TRAN_ID,TRAN_AMT,TRAN_DATE,"
+            sv_a = sv_a + "TRAN_PARTICULAR,TRAN_PARTICULAR2,LCHG_USER_ID,LCHG_TIME,RCRE_TIME,BANK_ID,PSTD_FLG,FREZ_CODE,CR_SOL,CHRG_TRAN_ID) "
+            sv_a = sv_a + "VALUES ("
+            sv_a = sv_a + "'"+BANCS.OUTPARAM.id+"', '"+BANCS.OUTPARAM.foracid+"',"
+            sv_a = sv_a + "'"+BANCS.OUTPARAM.devType+"', '"+BANCS.OUTPARAM.tranType+"',"
+            sv_a = sv_a + "'"+BANCS.OUTPARAM.srlNum+"', '"+BANCS.OUTPARAM.tranId+"', '"+BANCS.OUTPARAM.tranAmt+"',"
+            sv_a = sv_a + "'"+BANCS.OUTPARAM.tranDate+"', '"+BANCS.OUTPARAM.tranPart+"',"
+            sv_a = sv_a + "'"+BANCS.OUTPARAM.tranPart2+"', '"+BANCS.OUTPARAM.lchgUser+"',"
+            sv_a = sv_a + "'"+BANCS.OUTPARAM.lchgTime+"', '"+BANCS.OUTPARAM.creatDate+"', "
+            sv_a = sv_a + "'"+BANCS.OUTPARAM.bankId+"', '"+BANCS.OUTPARAM.pstdFlg+"', '"+BANCS.OUTPARAM.frezCode+"',"
+            sv_a = sv_a + "'"+BANCS.OUTPARAM.crSol+"', '"+BANCS.OUTPARAM.chrgTranId+"')"
+
+            PRINT(sv_a)
+            sv_b = urhk_dbSQLWithBind(sv_a)
+            PRINT(sv_b)
+
+            IF (sv_b == 0) THEN
+            #{
+                sv_a = "DELETE CUSTOM.STAMP_DUTY_CHARGES WHERE ID='"+sv_x+"' AND FORACID='"+sv_y+"' AND CHRG_TRAN_ID ='"+sv_z+"'"
+                PRINT(sv_a)
+                sv_b = urhk_dbSQLWithBind(sv_a)
+                PRINT(sv_b)
+            #}
+            ENDIF
+
+            sv_u = urhk_dbCursorFetch(sv_t)
+
+        #}
+        DO
+        sv_v = urhk_dbCursorClose(sv_t)
+        PRINT("Cursor is closed")
+    #}
+    ENDIF
+
+trace off
+end-->
