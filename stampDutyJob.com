@@ -1,5 +1,10 @@
-COMMONENVFILE="/etc/b2k/OPTPROD/FINCORE/01/com/commonenv.com"
+COMMONENVFILE="/etc/b2k/<bank-instance>/FINCORE/01/com/commonenv.com"
 . $COMMONENVFILE
+
+TRACE_PATH="/finreports/CDCI_LOGS/log/"
+cd $TRACE_PATH
+
+
 create_finacle_session()
 {
        # Create a Finacle session
@@ -24,7 +29,9 @@ create_finacle_session()
 call_cron_coms()
 {
        SCRIPT_NAME="CDStampDuty.scr"
-       exebatch babx4061 $B2K_SESSION_ID $SCRIPT_NAME $1 2>babx4061.log 1>/dev/null&
+       MOVETOHISTORY="CDMoveToHistory.scr"
+       exebatch babx4061 $B2K_SESSION_ID $SCRIPT_NAME  $1 2>err.log 1>/dev/null&
+       exebatch babx4061 $B2K_SESSION_ID $MOVETOHISTORY $1 2>err.log 1>/dev/null&
 }
 if [ -s "cron.session" ]
 then

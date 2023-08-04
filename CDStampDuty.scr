@@ -22,8 +22,6 @@ trace On
     #}
     ENDIF
 
-    OPT.STMP.outputFile = "records.out"
-
     sv_a = "id,foracid,tranId,tranPart,crSol|SELECT ID,FORACID, TRAN_ID, TRAN_PARTICULAR, CR_SOL FROM CUSTOM.STMPCHRG "
     sv_a = sv_a + "WHERE PSTD_FLG = 'N' "
     PRINT(sv_a)
@@ -92,7 +90,7 @@ trace On
             PRINT(sv_r)
 
             #--- update to stamp duty table ---#
-            sv_b = "UPDATE CUSTOM.STMPCHRG SET FREZ_CODE = 'D',LCHG_TIME='"+BANCS.INPUT.entryDate+"',PSTD_FLG="
+            sv_b = "UPDATE CUSTOM.STMPCHRG SET FREZ_CODE = 'D',LCHG_TIME=SYSDATE,PSTD_FLG="
             sv_b = sv_b + "(SELECT PSTD_FLG FROM TBAADM.DTD WHERE TRAN_ID='"+OPT.STMP.newTranId+"' AND ROWNUM=1) "
             sv_b = sv_b + "WHERE FORACID = '"+OPT.STMP.drForacid+"' and BANK_ID = '01' AND ID='"+OPT.STMP.id+"'"
             PRINT(sv_b)
